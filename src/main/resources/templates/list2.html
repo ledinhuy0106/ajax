@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>List</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        function getAllStudent() {
+            $.ajax({
+                type: "GET",
+                url: "http://localhost:8080/api/students",
+                success: function (data) {
+                    console.log(data)
+                    display(data)
+                }
+            })
+        }
+
+        function display(array) {
+            let dis = "<table border='1px'>" +
+                "<tr>" +
+                "<th>Tên</th>" +
+                "<th>Tuổi</th>" +
+                "<th>Điểm</th>" +
+                "<th>Lớp</th>" +
+                "<th>Sửa</th>" +
+                "<th>Xóa</th>" +
+                "</tr>"
+            for (let i = 0; i < array.length; i++) {
+                res += "<tr><td>" + array[i].name + "</td>" +
+                    "<td>" + array[i].age + "</td>" +
+                    "<td>" + array[i].score + "</td>" +
+                    "<td>" + array[i].clazz.name + "</td>" +
+                    "<td>" + "<button onclick='showFormEdit(" + array[i].id + ")'>Sửa</button>" + "</td>" +
+                    "<td>" + "<button onclick='deleteById(" + array[i].id + ")'>Xóa</button>" + "</td></tr>";
+            }
+            document.getElementById('div1').innerHTML = dis
+        }
+
+        function save() {
+            let name = $('#name').val()
+            let score = document.getElementById("score").value;
+            let age = document.getElementById("age").value;
+            let clazz = document.getElementById("clazz").value;
+            let student = {
+                name: name,
+                score: score,
+                age: age,
+                clazz: {
+                    id: clazz
+                }
+            }
+            console.log(student);
+            $.ajax({
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                type: 'POST',
+                url: "http://localhost:8080/api/students/",
+                data: JSON.stringify(student),
+                success: function (data) {
+                    getAllStudent(data)
+                },
+                error: function (error) {
+                    console.log(error)
+                }
+            })
+        }
+
+        function showFormEdit(id) {
+            $.ajax({
+                type: "GET",
+                url: "http://localhost:8080/api/students/" + id,
+                success: function (data) {
+                    let res =
+                        '<input type="text" placeholder="name" id="name" value="' + data.name + '">\n' +
+                        '<input type="text" placeholder="score" id="score" value="' + data.score + '">\n' +
+                        '<input type="text" placeholder="age" id="age" value="' + data.age + '">\n' +
+                        "    <select id=\"clazz\">;"
+                    $.ajax({
+                        type: "GET",
+                        url: "http://localhost:8080/api/clazz/",
+                        success: function (data1) {
+                            console.log(data1)
+                            for (let i = 0; i < data1.length; i++) {
+                                res += `<option value="${data1[i].id}">${data1[i].name}</option>`
+
+                            }
+                            res += '<select>' + '<button onclick="saveEdit(' + data.id + ')">Lưu thông tin</button>'
+                            document.getElementById('div1').innerHTML = res;
+                        },
+                        error: function (error) {
+                        }
+                    })
+                }
+            })
+        }
+
+        function saveEdit(id) {
+            let student = {
+                name: document.getElementById("name").value,
+                score: document.getElementById("score").value,
+                age: document.getElementById("age").value,
+                clazz: {
+                    id: document.getElementById("clazz").value,
+                }
+            }
+            console.log(student)
+            $.ajax({
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                type: "PUT",
+                url: "http://localhost:8080/api/students/" + id,
+                data: JSON.stringify(student),
+                success: getAllStudent,
+                error: function (error) {
+                }
+            })
+        }
+
+        function orderByAgeDesc() {
+            $.ajax({
+                type: "GET",
+                url: "http://localhost:8080/api/students/orderByAgeDesc/",
+                success: function (data) {
+                    let str = "<table border='1px'>\<" +
+                        "tr>" +
+                        "<th>Tên </th>" +
+                        "<th>Tuổi</th>" +
+                        "<th>Điểm</th>" +
+                        "<th>Lớp</th>" +
+                        "</tr>"
+                    for (let i = 0; i < data.length; i++) {
+                        str += "<tr><td>" + data[i].name + "</td>" +
+                            '<td>' + data[i].age + "</td>" +
+                            '<td>' + data[i].score + "</td>" +
+                            '<td>' + data[i].clazz.name + "</td>"
+                    }
+                    str += "</table>"
+                    document.getElementById("div1").innerHTML = str;
+                },
+                error: function (error) {
+                    alert("ops!! Something wrong!")
+                }
+            })
+        }
+
+        function deleteById(id) {
+            if (confirm("Really want to delete?")) {
+                $.ajax({
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    type: "DELETE",
+                    url: "http://localhost:8080/api/students/" + id,
+                    success: getAllStudent,
+                    error: function (error) {
+                    }
+                });
+            }
+        }
+
+        function showFormSearch() {
+            document.getElementById("div1").innerHTML =
+                '<input type="text" id="key">' +
+                '<button onclick="search()">Tìm</button>'
+        }
+
+        function search() {
+            let key = document.getElementById("key").value;
+            $.ajax({
+                type: "GET",
+                url: "http://localhost:8080/api/students/search/" + key,
+
+                success: function (data) {
+                    let str = "";
+                    for (let i = 0; i < data.length; i++) {
+                        str += "<br><span>" + data[i].name + ": " +
+                            data[i].score +
+                            ":" + data[i].age +
+                            "<button onclick='showFormEdit(" + data[i].id + ")'>Sửa</button></span>"
+                    }
+                    document.getElementById("div1").innerHTML = str;
+                },
+                error: function (error) {
+                    alert("Not found")
+                    showFormSearch()
+                }
+            })
+        }
+
+        function showFormAdd1() {
+            let res = " <input type=\"text\" id=\"name\">\n" +
+                "    <input type=\"text\" id=\"score\">\n" +
+                "    <input type=\"text\" id=\"age\">\n" +
+                "    <select id=\"clazz\">;"
+            $.ajax({
+                type: "GET",
+                url: "http://localhost:8080/api/clazz/",
+                success: function (data) {
+                    console.log(data)
+                    for (let i = 0; i < data.length; i++) {
+                        res += `<option value="${data[i].id}">${data[i].name}</option>`
+
+                    }
+                    res += '<select>' + '<button onClick="save()">Add</button>'
+                    document.getElementById('div1').innerHTML = res;
+                }
+            })
+        }
+
+    </script>
+</head>
+<body>
+<button onclick="getAllStudent()">Danh sách học sinh</button>
+<button onclick="showFormAdd1()">thêm hsinh</button>
+<button onclick="getAllClass()">Danh sách</button>
+<button onclick="showFormSearch()">Tìm</button>
+<button onclick="orderByAgeDesc()">Điểm học sinh từ lớn đến bé</button>
+<div id="div1"></div>
+<div id="content"></div>
+</body>
+</html>
